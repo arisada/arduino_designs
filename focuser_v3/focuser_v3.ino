@@ -54,8 +54,26 @@ uint8_t half_step = 0;
 bool moving = false;
 //#define DEBUG
 
+/* EEPROM stuff */
+#include <EEPROM.h>
+const int eeprom_version_addr=0;
+const int eeprom_speed_addr=1;
+const int eeprom_position_addr=2;
+
+const uint8_t eeprom_current_version=1;
 
 void setup() {
+  uint8_t r_version=0xff;
+  EEPROM.get(eeprom_version_addr, r_version);
+  if (r_version != eeprom_current_version){
+    EEPROM.put(eeprom_version_addr, eeprom_current_version);
+    EEPROM.put(eeprom_speed_addr, speed);
+    EEPROM.put(eeprom_position_addr, position);
+  } else {
+    EEPROM.get(eeprom_speed_addr, speed);
+    EEPROM.get(eeprom_position_addr, position);
+  }
+
 #ifdef NEMA
   for (int i = 0; i < (sizeof(out_pins) / sizeof(out_pins[0])); ++i) {
     pinMode(out_pins[i], OUTPUT);
@@ -78,6 +96,12 @@ void setup() {
 #endif
   Serial.begin(115200);
   //blink(10);
+}
+
+void save(){
+    //put will only update if it has changed
+    EEPROM.put(eeprom_speed_addr, speed);
+    EEPROM.put(eeprom_position_addr, position);  
 }
 
 void blink(int n) {
@@ -401,5 +425,6 @@ void loop() {
     move();
   } else {
     release();
+    save();
   }
 }
